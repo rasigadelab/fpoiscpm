@@ -1,0 +1,17 @@
+Package: fpoiscpm
+Type: Package
+Title: Detection of rate changes for uncertain events.
+Version: 0.1.0
+Author: Jean-Philippe Rasigade
+Maintainer: Jean-Philippe Rasigade <jean-philippe.rasigade@univ-lyon1.fr>
+Description: Statistical process control of unobservable event rate. Uses
+    a fuzzy/probabilistic definition of uncertain events coded as event
+    probabilities in [0,1]. Defines a test statistic and null distribution
+    for the comparison of the rates of occurrence of the events across
+    time periods. Defines a permutation test to determine the significance
+    of the most significant deviation (MSD) in the context of a change point
+    model.
+License: Affero GPL 3.0
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.2.3
