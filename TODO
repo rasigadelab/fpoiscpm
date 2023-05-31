@@ -1,0 +1,13 @@
+#################################################################
+# TODO
+
+2023-05-30 Determine a warning threshold a priori then stop permutations
+    when either lower confint > threshold or upper confint below threshold
+
+#################################################################
+# DONE
+
+2023-05-30 msd() function: now takes maximum number of change points (toward past) as argument
+2023-05-30 in msd::perm_series(), determine whether the whole series should be
+    permuted or only the tested series => whole series
+2023-05-30 Raw permutation P-values are not enough for small threshold, need a Gamma approximation
