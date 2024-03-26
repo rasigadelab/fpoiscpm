@@ -114,7 +114,7 @@ fpr.test(s)
 ### Runner version: run msd repeatedly and manage series to find change points
 
 
-msd.seq <- function(s, p.cut = 0.05, ...) {
+msd.seq <- function(s, threshold = 0.05, ...) {
 
   change.point.list <- list()
 
@@ -127,7 +127,7 @@ msd.seq <- function(s, p.cut = 0.05, ...) {
 
     si <- s[ s_present:s_past ]
     r  <- msd(si)
-    if(r["p.value"] < p.cut) {
+    if(r["p.value"] < threshold) {
 
       change.point.list[[length(change.point.list) + 1]] <- data.table(t(c(
         index = i,

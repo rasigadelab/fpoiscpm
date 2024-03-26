@@ -1,38 +1,17 @@
-#' @rdname msd
-#' @title Detect the most significant deviation of a fuzzy event rate in a time series
-#' @description
-#' The \code{msd} routine tests a series of candidate change points for a deviation
-#' (increase or decrease) of a fuzzy event rate, identifies the most significant
-#' deviation in the series, then performs a permutation test to estimate the
-#' overall significance of the deviation.#'
-#' @param s time series of fuzzy event counts, ordered backward in time (more recent bins come first)
-#' @param tmax number of candidate change points, defaults to half the series length
-#' @param alternative the test direction ("greater" detects an increase of rate toward present time)
-#' @param n_perm no. of permutations to estimate the null distribution in P-value estimation
-#' @param alpha_perm error rate for the confidence interval of the P-value
-#' @param log.p return the logarithm of P-values
-#' @param threshold significance threshold (type 1 error rate) for sequential change point detection
-#' @return 
-#' Subroutine \code{fpr.test} returns a vector of P-values of the same length as \code{s}.
-#'
-#' Subroutine \code{msd} returns a numeric vector with named elements
-#' \item{p.value}{approximate P-value estimated using a Gamma fit (see Details)}
-#' \item{p.lo}{lower bound of the P-value confidence interval}
-#' \item{p.hi}{upper bound of the P-value confidence interval}
-#' \item{tau}{the estimated change point, in units of time before present}
-#' \item{rate0}{the estimated fuzzy rate before the change point}
-#' \item{rate1}{the estimated fuzzy rate after the change point}
-#'
-#' Subroutine \code{msd.seq} returns a list of detected change points (whose P-value is below \code{threashold})
-#' and behaves as if the time series was discovered sequentially. When a significant change point is 
-#' found, the data before this change point is discarded and the analysis resumes at the last change point.
-#'@examples
-#'\dontrun{
-#' s <- c(runif(10) + 0, runif(10) +  1, runif(10) + 0)
-#' plot(rev(s))
-#' print(msd.seq(s, 0.05))
-#'}
-#' @export
+# DEMO - EVENT DETECTION USING THE FUZZY POISSON MSD METHOD
+
+library(fpoiscpm)
+library(data.table)
+
+rm(list = objects())
+
+s <- c(runif(10) + 0, runif(10) +  1, runif(10) + 0)
+print(msd.seq(s, 0.05))
+
+
+stop()
+
+
 fpr.test <- function(s, tmax = floor(length(s) / 2), alternative = c("two.sided", "less", "greater"), log.p = FALSE) {
 
   n <- length(s)
@@ -72,8 +51,6 @@ fpr.test <- function(s, tmax = floor(length(s) / 2), alternative = c("two.sided"
   return(pval)
 }
 
-#' @rdname msd
-#' @export
 msd <- function(s, n_perm = 1e3, alpha_perm = 0.05, ...) {
 
   n <- length(s)
@@ -123,8 +100,26 @@ msd <- function(s, n_perm = 1e3, alpha_perm = 0.05, ...) {
   ))
 }
 
-#' @rdname msd
-#' @export
+if(FALSE) {
+  s <- c(runif(20) +  0, runif(20) + 10)
+  s <- c(runif(20) + 10, runif(20) +  0)
+
+  fpr.test(s, alternative = "g")
+  fpr.test(s, alternative = "l")
+  fpr.test(s, alternative = "t")
+  fpr.test(s)
+}
+
+s <- c(runif(10) + 10, runif(10) +  0)
+
+fpr.test(s)
+# print(msd(s, alternative = "two", tmax = 15))
+
+# stop()
+
+### Runner version: run msd repeatedly and manage series to find change points
+
+
 msd.seq <- function(s, threshold = 0.05, ...) {
 
   change.point.list <- list()
@@ -153,3 +148,116 @@ msd.seq <- function(s, threshold = 0.05, ...) {
 
   return(rbindlist( change.point.list ))
 }
+
+
+s <- c(runif(10) + 0, runif(10) +  1, runif(10) + 0)
+plot(rev(s))
+print(msd.seq(s, 0.05))
+
+
+stop()
+
+
+# learning.phase.length <- 5
+
+p.cut <- 0.05
+
+reslist <- list()
+
+s_active <- s
+
+last.change.point <- 0
+
+for(i in 1:length(s)) {
+
+  s_present <- length(s) - i + 1
+  s_past    <- length(s) - last.change.point
+
+  si <- s[ s_present:s_past ]
+  r  <- msd(si)
+  if(r["p.value"] < p.cut) {
+    reslist[[length(reslist) + 1]] <- c(r, i = i, change.point.new = i - r["change.point"], change.point.last = last.change.point)
+    last.change.point <- i - r["change.point"]
+  }
+}
+
+print(reslist)
+
+plot(s)
+
+stop()
+
+
+
+
+
+
+
+
+### TEST ZONE ###################################################
+
+
+# Parameters ####################################################
+
+# Length of learning phase, during which testing is not performed
+lphase <- 60
+# Sliding window length
+tmax_ref <- 180
+# Alternative hypothesis (greater or less): detect an increase or
+# decrease of the event rate ?
+alt <- "greater"
+# alt <- "less"
+# Number of permutations used to estimate the test P-value
+n_perm <- 200
+#  Alarm threshold
+warning_threshold <- 0.05
+
+# source("R/msd.R")
+
+# Load data #####################################################
+
+load("../monitoring_data/nmetric_indicator_covid_dataset.Rdata")
+
+d <- data.table(data.tr_id)
+rm(data.tr_id)
+setnames(d, "tr_id", "x")
+
+d[, .N, by = .(ward, species)]
+
+unique(d$ward)
+
+# Select ward and species ---
+ward_filt <- unique(d$ward)[11]
+species_filt <- "KLEPNE"
+
+# Time series (/!\ forward in time)
+s <- d[ward == ward_filt & species == species_filt][order(date)]$x
+
+s <- rev(s)
+
+# Scan the time series, leave 2 months (60 days) of learning phase
+n <- length(s)
+
+res <- data.table(t(sapply((lphase+1):n, function(i) {
+  if(i %% 10 == 0) cat(".")
+  # Suppose we're day i. Can test at most i-lphase-1 change points
+  s_i <- rev(head(s, i))
+  tmax <- pmin(i - lphase - 1, tmax_ref)
+  c(day = i, msd(s_i, tmax = tmax, alternative = alt, n_perm = n_perm))
+})))
+
+res
+
+{
+  par(mfrow = c(2,1))
+
+  plot(s, type = "l", xlim = c(0, n), ylab = "fuzzy event count", xlab = "time (days)")
+  plot(res$day, (res$p.value), xlim = c(0, n), col = (1 + (res$p.value < warning_threshold)),
+       log = "y", type = "b", pch = 19, cex = 0.5,
+       ylab = "P-value", xlab = "time (days)")
+  abline(h=warning_threshold, lty = 2, col = "gray")
+}
+
+
+
+
