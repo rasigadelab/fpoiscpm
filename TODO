@@ -1,6 +1,9 @@
 #################################################################
 # TODO
 
+2024-03-26 Make a proper 2-tailed f-test in fpr.test then use it in msd routine
+2024-03-26 Make a proper prospective msd finder as a working example, running
+    msd for each new point in the time series
 2023-05-30 Determine a warning threshold a priori then stop permutations
     when either lower confint > threshold or upper confint below threshold
 

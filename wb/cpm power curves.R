@@ -3,9 +3,10 @@
 
 library(parallel)
 library(data.table)
+library(fpoiscpm)
 # library(rateratio.test)
 
-if(!exists("cl")) cl <- makeCluster(64)
+if(!exists("cl")) cl <- makeCluster(32)
 
 rm(list = setdiff(objects(), "cl"))
 
@@ -43,7 +44,7 @@ repfun <- function(r1_ratio = 1, nrep = 100) {
   rbindlist(replicate(nrep, {
     r1 <- r0 * r1_ratio
     s <- twoseries_sim(t1, r1, t0, r0)
-    data.table(t1, r1, t1, r0, t(msd(s, tmax, n_perm = 100)))
+    data.table(t1, r1, t1, r0, t(msd(s, tmax, "greater", n_perm = 100)))
   }, simplify = FALSE) )
 }
 
@@ -53,11 +54,13 @@ QUIET <- clusterEvalQ(cl, {
   library(fpoiscpm)
 })
 
+ratioseq <- 2^seq(-2, 2, by = 0.25)
+
 QUIET <- clusterExport(cl, setdiff(objects(), "cl"))
 
-res <- rbindlist(parSapply(cl, seq(1, 4, by = 0.25), repfun, nrep = 100, simplify = FALSE))
+res <- rbindlist(parSapply(cl, ratioseq, repfun, nrep = 100, simplify = FALSE))
 
-xx <- res[ , .(rejection = mean(pval_center < 0.05)), by = r1]
+xx <- res[ , .(rejection = mean(p.center < 0.05)), by = r1]
 
 # jpeg("power curve t10.jpeg", 3000, 4000, pointsize = 96, quality = 95)
 {
@@ -65,9 +68,9 @@ xx <- res[ , .(rejection = mean(pval_center < 0.05)), by = r1]
 
   plot(xx, xlab = "Rate fold-change after change point",
        ylab = "Rejection probability", type = "b", col = "blue", lwd = 2)
-  hist(res[r1 > 2]$t, breaks = n, col = "lightgreen", freq = FALSE,
+  hist(res[r1 > 2]$tau, breaks = n, col = "lightgreen", freq = FALSE,
        xlab = "Change point", main = "Change point estimation")
-  hist(res[r1 <= 2]$t, breaks = n, add = TRUE, freq = FALSE, col = rgb(0.8,0,0,0.3))
+  hist(res[r1 <= 2]$tau, breaks = n, add = TRUE, freq = FALSE, col = rgb(0.8,0,0,0.3))
   legend("topleft", bty = "n", fill = c("lightgreen", rgb(0.8,0,0,0.3)),
          title = "Rate fold-change", legend = c("<= 2", "> 2"))
 }

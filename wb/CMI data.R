@@ -9,9 +9,12 @@ rm(list = objects())
 
 # Length of learning phase, during which testing is not performed
 lphase <- 60
+# Sliding window length
+tmax_ref <- 180
 # Alternative hypothesis (greater or less): detect an increase or
 # decrease of the event rate ?
-alt <- "greater"
+# alt <- "greater"
+alt <- "less"
 # Number of permutations used to estimate the test P-value
 n_perm <- 200
 #  Alarm threshold
@@ -45,7 +48,7 @@ res <- data.table(t(sapply((lphase+1):n, function(i) {
   if(i %% 10 == 0) cat(".")
   # Suppose we're day i. Can test at most i-lphase-1 change points
   s_i <- rev(head(s, i))
-  tmax <- pmin(i - lphase - 1, 60)
+  tmax <- pmin(i - lphase - 1, tmax_ref)
   c(day = i, msd(s_i, tmax = tmax, alternative = alt, n_perm = n_perm))
 })))
 
