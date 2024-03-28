@@ -1,15 +1,15 @@
 #################################################################
 # TODO
 
-2024-03-26 Make a proper 2-tailed f-test in fpr.test then use it in msd routine
-2024-03-26 Make a proper prospective msd finder as a working example, running
-    msd for each new point in the time series
 2023-05-30 Determine a warning threshold a priori then stop permutations
     when either lower confint > threshold or upper confint below threshold
 
 #################################################################
 # DONE
 
+2024-03-26 Make a proper 2-tailed f-test in fpr.test then use it in msd routine
+2024-03-26 Make a proper prospective msd finder as a working example, running
+    msd for each new point in the time series
 2023-05-30 msd() function: now takes maximum number of change points (toward past) as argument
 2023-05-30 in msd::perm_series(), determine whether the whole series should be
     permuted or only the tested series => whole series
